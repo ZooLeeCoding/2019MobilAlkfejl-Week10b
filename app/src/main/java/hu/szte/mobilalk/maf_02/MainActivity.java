@@ -4,7 +4,10 @@ import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -46,6 +49,8 @@ public class MainActivity extends AppCompatActivity
 
     private PendingIntent alarmPendingIntent;
 
+    private JobScheduler mSchedule;
+
     public static final String EXTRA_MESSAGE = "hu.szte.mobilalk.maf_02.MESSAGE";
     public static final int TEXT_REQUEST = 1;
 
@@ -84,6 +89,8 @@ public class MainActivity extends AppCompatActivity
 
         this.mAlarmManager =
                 (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+
+        this.mSchedule = (JobScheduler)getSystemService(Context.JOB_SCHEDULER_SERVICE);
     }
 
     @Override
@@ -121,11 +128,42 @@ public class MainActivity extends AppCompatActivity
             case R.id.item_cancel_alarm:
                 cancelAlarm();
                 break;
+            case R.id.item_schedule:
+                scheduleJob();
+                break;
+            case R.id.item_unchesdule:
+                unScheduleJob();
+                break;
             default:
                 break;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void scheduleJob() {
+        ComponentName serviceName = new ComponentName(getPackageName(),
+                MyScheduleJob.class.getName());
+
+        int networkReq = JobInfo.NETWORK_TYPE_ANY;
+
+        JobInfo.Builder jobBuilder = new JobInfo.Builder(0, serviceName)
+                .setRequiresCharging(true)
+                .setRequiredNetworkType(networkReq)
+                .setTriggerContentMaxDelay(1000);
+
+        JobInfo jobInfo = jobBuilder.build();
+        mSchedule.schedule(jobInfo);
+        Toast.makeText(this, "job is scheduled", Toast.LENGTH_LONG).show();
+    }
+
+    public void unScheduleJob() {
+        if(this.mSchedule != null) {
+            this.mSchedule.cancelAll();
+            Toast.makeText(this,
+                    "All scheduled jobs canceled", Toast.LENGTH_SHORT).show();
+        }
+
     }
 
     public void setAlarm() {
